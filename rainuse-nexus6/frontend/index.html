@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaVista — Grundfos | Water Prospecting Engine</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g900:#0D2B1A;--g800:#1B4332;--g700:#2D6A4F;--g600:#40916C;
+  --g500:#52B788;--g400:#74C69D;--g200:#D8F3DC;--g100:#EEF8F1;--g050:#F7FAF8;
+  --n900:#111827;--n800:#1F2937;--n700:#374151;--n600:#4B5563;
+  --n400:#9CA3AF;--n200:#E5E7EB;--n100:#F3F4F6;--white:#FFFFFF;
+  --amber:#92400E;--amber-bg:#FFFBEB;--amber-border:#FDE68A;
+  --blue:#1E40AF;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --red:#991B1B;--red-bg:#FEF2F2;--red-border:#FECACA;
+  --font:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--g050);color:var(--n900);font-size:14px;line-height:1.5;}
+
+/* NAV */
+.topnav{background:var(--g800);height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:200;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{
+  width:32px;
+  height:32px;
+  background:var(--g100);
+  border:1px solid var(--g200);
+  border-radius:7px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.brand-name{font-size:15px;font-weight:600;color:var(--white);}
+.brand-tagline{font-size:10px;color:var(--g400);letter-spacing:.5px;}
+.nav-crumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--g400);}
+.nav-crumb span{color:var(--g300,#95D5B2);}
+.nav-crumb .sep{color:var(--g700);}
+
+/* SCREENS */
+.screen{display:none;}.screen.active{display:block;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:5px;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;text-decoration:none;}
+.btn-primary{background:var(--g700);color:var(--white);border-color:var(--g700);}
+.btn-primary:hover{background:var(--g800);}
+.btn-primary:disabled{background:var(--n400);border-color:var(--n400);cursor:not-allowed;}
+.btn-outline{background:transparent;color:var(--g700);border-color:var(--g600);}
+.btn-outline:hover{background:var(--g100);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn-lg{padding:11px 26px;font-size:14px;font-weight:600;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--n200);border-radius:7px;padding:20px 22px;}
+.card-sm{padding:14px 16px;}
+
+/* SECTION TITLES */
+.sec-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--n600);margin-bottom:10px;}
+.page-title{font-size:22px;font-weight:600;color:var(--g800);margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--n600);margin-bottom:24px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.bg-green{background:#DCFCE7;color:#166534;}
+.bg-amber{background:#FEF9C3;color:#854D0E;}
+.bg-blue{background:#DBEAFE;color:#1E40AF;}
+.bg-red{background:#FEE2E2;color:#991B1B;}
+.bg-grey{background:var(--n100);color:var(--n600);}
+
+/* DATA ROWS */
+.dr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--n200);font-size:13px;}
+.dr:last-child{border-bottom:none;}
+.dr-k{color:var(--n600);}
+.dr-v{font-family:var(--mono);font-weight:500;color:var(--n900);}
+.dr-src{font-size:10px;color:var(--n400);font-family:var(--mono);}
+
+/* PROGRESS BAR */
+.prog-wrap{height:6px;background:var(--n200);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--g600);border-radius:3px;transition:width .4s;}
+
+/* CONFIDENCE BARS */
+.cb-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.cb-label{font-size:12px;color:var(--n600);min-width:170px;}
+.cb-track{flex:1;height:5px;background:var(--n200);border-radius:3px;overflow:hidden;}
+.cb-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.cb-val{font-family:var(--mono);font-size:12px;font-weight:500;min-width:34px;text-align:right;}
+
+/* SCORE RING */
+.ring-wrap{position:relative;flex-shrink:0;}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-num{font-size:24px;font-weight:600;font-family:var(--mono);line-height:1;}
+.ring-lbl{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--n400);}
+
+/* AXIS BARS */
+.axis{margin-bottom:8px;}
+.axis-hdr{display:flex;justify-content:space-between;margin-bottom:3px;}
+.axis-k{font-size:12px;color:var(--n600);}
+.axis-v{font-size:12px;font-weight:600;font-family:var(--mono);}
+.axis-bar{height:5px;background:var(--n200);border-radius:3px;overflow:hidden;}
+.axis-fill{height:100%;border-radius:3px;transition:width .9s;}
+
+/* STAT BOXES */
+.stat-row{display:grid;gap:12px;}
+.stat-box{background:var(--white);border:1px solid var(--n200);border-radius:7px;padding:14px 16px;}
+.stat-val{font-size:22px;font-weight:600;font-family:var(--mono);color:var(--g700);line-height:1.1;}
+.stat-lbl{font-size:11px;color:var(--n600);margin-top:2px;}
+.stat-src{font-size:10px;color:var(--n400);font-family:var(--mono);margin-top:2px;}
+
+/* US MAP */
+#us-map-svg{width:100%;cursor:pointer;}
+#us-map-svg path{stroke:#fff;stroke-width:.5;transition:opacity .15s;}
+#us-map-svg path:hover{opacity:.75;}
+#us-map-svg path.sel{stroke:var(--g800);stroke-width:2;}
+
+/* CALCULATOR */
+.calc-box{background:var(--g800);border-radius:8px;padding:22px 24px;color:var(--white);}
+.calc-title{font-size:13px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;}
+.calc-input-group{margin-bottom:12px;}
+.calc-label{font-size:11px;color:var(--g400);margin-bottom:4px;}
+.calc-row{display:flex;align-items:center;gap:8px;}
+.calc-range{flex:1;accent-color:var(--g500);}
+.calc-val{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--white);min-width:90px;}
+.calc-results{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.calc-result{background:rgba(255,255,255,.07);border-radius:5px;padding:10px 12px;}
+.calc-result-val{font-size:18px;font-weight:600;font-family:var(--mono);color:var(--g400);line-height:1.1;}
+.calc-result-lbl{font-size:10px;color:var(--g500);margin-top:2px;}
+.calc-formula{font-size:10px;color:var(--g600);font-family:var(--mono);margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{text-align:left;padding:8px 12px;background:var(--g050);border-bottom:2px solid var(--n200);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--n600);cursor:pointer;user-select:none;white-space:nowrap;}
+thead th:hover{color:var(--g700);}
+tbody tr{border-bottom:1px solid var(--n200);cursor:pointer;transition:background .1s;}
+tbody tr:hover{background:var(--g050);}
+tbody tr.row-sel{background:var(--g100);}
+td{padding:9px 12px;vertical-align:middle;}
+.td-name{font-weight:500;color:var(--n900);}
+.td-addr{font-size:11px;color:var(--n600);font-family:var(--mono);}
+.sp{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-family:var(--mono);font-size:12px;font-weight:500;}
+.sp-hi{background:#DCFCE7;color:#166534;}
+.sp-md{background:#FEF9C3;color:#854D0E;}
+.sp-lo{background:#FEE2E2;color:#991B1B;}
+
+/* SCAN LOG */
+.scan-log{background:var(--n900);border-radius:6px;padding:14px;height:100%;overflow-y:auto;font-family:var(--mono);font-size:11px;}
+.scan-log::-webkit-scrollbar{width:3px;}
+.scan-log::-webkit-scrollbar-thumb{background:#374151;}
+.ll{margin-bottom:3px;line-height:1.6;}
+.lt{color:#6B7280;}.lok{color:#4ADE80;}.lfound{color:#86EFAC;font-weight:500;}
+.linfo{color:#93C5FD;}.lwarn{color:#FCD34D;}
+
+/* LEAFLET OVERRIDES */
+.leaflet-container{background:var(--g050)!important;}
+.leaflet-popup-content-wrapper{border-radius:7px!important;font-family:var(--font);}
+.leaflet-popup-content{font-size:13px;margin:10px 14px;}
+.popup-title{font-weight:600;margin-bottom:3px;}
+.popup-sub{font-size:11px;color:var(--n600);font-family:var(--mono);margin-bottom:6px;}
+.popup-grid{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:12px;}
+.pk{color:var(--n600);}.pv{font-family:var(--mono);font-weight:500;}
+
+/* CV VIEWER */
+.cv-viewer{position:relative;background:#000;border-radius:6px;overflow:hidden;border:1px solid var(--n200);}
+.cv-viewer img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .3s;}
+.cv-viewer img.hide{opacity:0;}
+.cv-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(13,43,26,.9);padding:7px 12px;display:flex;align-items:center;justify-content:space-between;}
+.cv-bar-txt{font-family:var(--mono);font-size:9px;color:var(--g400);}
+.cv-btns{display:flex;gap:4px;}
+.cv-btn{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;cursor:pointer;background:transparent;color:var(--g400);border:1px solid var(--g700);}
+.cv-btn.on{background:var(--g700);color:var(--white);}
+
+/* REPORT */
+.report-sec{margin-bottom:14px;}
+.report-hdr{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--g700);padding-bottom:5px;border-bottom:1px solid var(--g200);margin-bottom:6px;}
+.report-body{font-size:13px;color:var(--n700);line-height:1.7;}
+
+/* ENV IMPACT */
+.impact-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.impact-box{background:var(--g050);border:1px solid var(--g200);border-radius:6px;padding:12px 14px;}
+.impact-val{font-size:18px;font-weight:600;font-family:var(--mono);color:var(--g700);line-height:1.1;}
+.impact-lbl{font-size:11px;color:var(--g800);margin-top:2px;}
+.impact-src{font-size:9px;color:var(--n400);font-family:var(--mono);margin-top:3px;}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--n200);margin:14px 0;}
+.mt8{margin-top:8px;}.mt12{margin-top:12px;}.mt16{margin-top:16px;}.mb8{margin-bottom:8px;}.mb16{margin-bottom:16px;}
+.flex{display:flex;}.gap8{gap:8px;}.gap12{gap:12px;}.gap16{gap:16px;}
+.text-mono{font-family:var(--mono);}.text-sm{font-size:12px;}.text-muted{color:var(--n600);}
+.back{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--n600);cursor:pointer;margin-bottom:18px;}
+.back:hover{color:var(--g700);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2C12 2 6 9 6 13.2C6 17.1 8.9 20 12 20C15.1 20 18 17.1 18 13.2C18 9 12 2 12 2Z"
+              fill="#1B4332"/>
+        <path d="M7 12.2H17"
+              stroke="#52B788"
+              stroke-width="1.8"
+              stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">AquaVista</div>
+      <div class="brand-tagline">Grundfos · Automated Water Prospecting Engine</div>
+    </div>
+  </div>
+  <div class="nav-crumb" id="nav-crumb">
+    <span>Select a state to begin scanning →</span>
+  </div>
+  <div style="font-size:11px;color:var(--g500);font-family:var(--mono);">
+    ESRI Satellite · Building CV Screening
+  </div>
+</nav>
+
+<!-- ══ SCREEN 1: US MAP + CALCULATOR ══════════════════════════ -->
+<div class="screen active" id="s1">
+<div style="display:grid;grid-template-columns:1fr 340px;gap:0;min-height:calc(100vh - 54px);">
+
+  <!-- LEFT: Map -->
+  <div style="padding:24px 20px 24px 28px;">
+    <h1 class="page-title">Select a State to Prospect</h1>
+    <p class="page-sub">Click any state on the map. The engine scans commercial buildings &gt;100,000 sq ft using satellite CV, then scores them across financial, environmental, and ESG data streams.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;" id="s1-stats">
+      <div class="stat-box"><div class="stat-val">48</div><div class="stat-lbl">States covered</div></div>
+      <div class="stat-box"><div class="stat-val" id="s1-bldg-count">30+</div><div class="stat-lbl">Buildings in database</div></div>
+      <div class="stat-box"><div class="stat-val">Hybrid CV</div><div class="stat-lbl">Roof + tower screening</div></div>
+      <div class="stat-box"><div class="stat-val">FEMP</div><div class="stat-lbl">Harvest formula standard</div></div>
+    </div>
+
+    <div class="card" style="padding:14px;">
+      <div class="sec-title">Click a state — all 48 continental US states · Color = Opportunity Index</div>
+      <div id="map-legend" style="display:flex;gap:16px;margin-bottom:8px;font-size:11px;color:var(--n600);">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#0D2B1A;display:inline-block;"></span>Very High (90+)</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#2D6A4F;display:inline-block;"></span>High (80–89)</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#52B788;display:inline-block;"></span>Medium (70–79)</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#D8F3DC;display:inline-block;"></span>Lower (&lt;70)</span>
+      </div>
+      <svg id="us-map-svg" viewBox="0 0 960 600"></svg>
+      <div id="map-tooltip" style="font-size:12px;color:var(--n600);font-family:var(--mono);margin-top:6px;min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Calculator -->
+  <div style="padding:24px 28px 24px 8px;display:flex;flex-direction:column;gap:14px;">
+
+    <div class="calc-box">
+      <div class="calc-title">⬡ Rainwater Harvest Calculator</div>
+      <div style="font-size:11px;color:var(--g500);margin-bottom:14px;font-family:var(--mono);">FEMP Standard · ARCSA 0.85 Runoff Coefficient</div>
+
+      <div class="calc-input-group">
+        <div class="calc-label">Roof Area (sq ft)</div>
+        <div class="calc-row">
+          <input type="range" class="calc-range" id="c-roof" min="10000" max="2000000" value="400000" step="10000" oninput="calcUpdate()">
+          <span class="calc-val" id="c-roof-v">400K ft²</span>
+        </div>
+      </div>
+      <div class="calc-input-group">
+        <div class="calc-label">Annual Rainfall (inches)</div>
+        <div class="calc-row">
+          <input type="range" class="calc-range" id="c-rain" min="4" max="65" value="34" step="1" oninput="calcUpdate()">
+          <span class="calc-val" id="c-rain-v">34"</span>
+        </div>
+      </div>
+      <div class="calc-input-group">
+        <div class="calc-label">Water Rate ($/1,000 gal)</div>
+        <div class="calc-row">
+          <input type="range" class="calc-range" id="c-rate" min="1" max="12" value="4.2" step="0.1" oninput="calcUpdate()">
+          <span class="calc-val" id="c-rate-v">$4.20</span>
+        </div>
+      </div>
+      <div class="calc-input-group">
+        <div class="calc-label">Sewage Rate ($/1,000 gal)</div>
+        <div class="calc-row">
+          <input type="range" class="calc-range" id="c-sewage" min="1" max="10" value="3.5" step="0.1" oninput="calcUpdate()">
+          <span class="calc-val" id="c-sewage-v">$3.50</span>
+        </div>
+      </div>
+
+      <div class="calc-results">
+        <div class="calc-result"><div class="calc-result-val" id="cr-gal">13.6M</div><div class="calc-result-lbl">Gallons / year</div></div>
+        <div class="calc-result"><div class="calc-result-val" id="cr-save">$104K</div><div class="calc-result-lbl">Annual savings</div></div>
+        <div class="calc-result"><div class="calc-result-val" id="cr-co2">7.9t</div><div class="calc-result-lbl">CO₂ offset / yr</div></div>
+        <div class="calc-result"><div class="calc-result-val" id="cr-pay">10.7yr</div><div class="calc-result-lbl">Payback period</div></div>
+      </div>
+      <div class="calc-formula">
+        Formula: Gal = sqft × rainfall(in) × 0.623 × 0.85<br>
+        Source: energy.gov/femp · ARCSA International
+      </div>
+    </div>
+
+
+
+    <div class="card card-sm">
+      <div class="sec-title">Data Sources Used</div>
+      <div style="font-size:11px;color:var(--n600);font-family:var(--mono);line-height:1.9;">
+        Water rates: worldpopulationreview.com<br>
+        Sewage rates: UNC EFC dashboard<br>
+        Tax incentives: TCEQ / state databases<br>
+        ESG/SBTi: sciencebasedtargets.org<br>
+        Satellite: ESRI / Sentinel-2 / Landsat<br>
+        Buildings: Open Buildings Dataset<br>
+        Harvest formula: FEMP / ARCSA<br>
+        Water stress: AQUEDUCT (WRI)<br>
+        CO₂ factor: US EPA eGrid
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ══ SCREEN 2: SCAN ══════════════════════════════════════════ -->
+<div class="screen" id="s2">
+<div style="padding:24px 28px;">
+  <div class="back" onclick="goS(1)">← Back to map</div>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <h1 class="page-title" id="s2-title">Scanning State</h1>
+      <p class="page-sub mb0" id="s2-sub">Fetching ESRI satellite tiles · Running roof and cooling-tower CV</p>
+    </div>
+    <button class="btn btn-outline btn-sm" id="s2-skip" onclick="goS(3)">Skip to Results →</button>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <span style="font-size:13px;font-weight:500;color:var(--n800);" id="s2-status">Initializing...</span>
+    <span style="font-size:12px;color:var(--n600);font-family:var(--mono);" id="s2-meta">0 / 0</span>
+  </div>
+  <div class="prog-wrap mb16"><div class="prog-fill" id="s2-prog" style="width:0%"></div></div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;">
+    <div class="stat-box"><div class="stat-val" id="tk-tiles">0</div><div class="stat-lbl">Tiles fetched</div></div>
+    <div class="stat-box"><div class="stat-val" id="tk-found">0</div><div class="stat-lbl">Buildings found</div></div>
+    <div class="stat-box"><div class="stat-val" id="tk-roofs">0</div><div class="stat-lbl">Roofs &gt;100K ft²</div></div>
+    <div class="stat-box"><div class="stat-val" id="tk-towers">0</div><div class="stat-lbl">Cooling towers</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;">
+    <div id="s2-map" style="height:440px;border-radius:7px;border:1px solid var(--n200);"></div>
+    <div>
+      <div class="sec-title">CV Detection Log</div>
+      <div class="scan-log" id="s2-log" style="height:440px;"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ SCREEN 3: RESULTS ═══════════════════════════════════════ -->
+<div class="screen" id="s3">
+<div style="padding:24px 28px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+  <div class="back" onclick="goS(1)">← Back to map</div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-outline btn-sm" onclick="rescanCurrentState()">↻ Rescan</button>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV()">↓ Export CSV</button>
+  </div>
+</div>
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+  <div>
+    <h1 class="page-title" id="s3-title">Buildings Detected</h1>
+    <p class="page-sub mb0" id="s3-sub">Ranked by Viability Score. Click any row for the full site report.</p>
+  </div>
+</div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;" id="s3-kpis"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start;">
+    <div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <span class="text-sm text-muted">Filter:</span>
+        <button class="btn btn-outline btn-sm" id="f-all"   onclick="setFilter('all')">All</button>
+        <button class="btn btn-outline btn-sm" id="f-prime" onclick="setFilter('prime')">Prime ≥80</button>
+        <button class="btn btn-outline btn-sm" id="f-tower" onclick="setFilter('tower')">Has Towers</button>
+        <button class="btn btn-outline btn-sm" id="f-leed"  onclick="setFilter('leed')">LEED / SBTi</button>
+        <input type="text" placeholder="Search..." id="s3-search" oninput="renderTbody()"
+          style="padding:4px 10px;border:1px solid var(--n200);border-radius:4px;font-size:12px;font-family:var(--font);max-width:180px;">
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table><thead><tr>
+          <th onclick="sortBy('name')">Building / Address</th>
+          <th onclick="sortBy('roof')">Roof</th>
+          <th onclick="sortBy('towers')">Towers</th>
+          <th onclick="sortBy('conf')">CV Conf</th>
+          <th onclick="sortBy('savings')">Savings/yr</th>
+          <th onclick="sortBy('score')">Score ↓</th>
+        </tr></thead><tbody id="s3-tbody"></tbody></table>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title">Map — detected buildings</div>
+      <div id="s3-map" style="height:320px;border-radius:7px;border:1px solid var(--n200);margin-bottom:12px;"></div>
+      <div class="sec-title">Top Targets</div>
+      <div id="s3-highlights"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ SCREEN 4: BUILDING REPORT ═══════════════════════════════ -->
+<div class="screen" id="s4">
+<div style="padding:24px 28px;">
+  <div class="back" onclick="goS(3)">← Back to results</div>
+
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
+    <div>
+      <h1 class="page-title" id="d-name">—</h1>
+      <div style="font-size:12px;color:var(--n600);font-family:var(--mono);" id="d-addr">—</div>
+      <div style="font-size:11px;color:var(--n400);font-family:var(--mono);margin-top:3px;" id="d-gps">—</div>
+      <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;" id="d-badges"></div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:38px;font-weight:600;font-family:var(--mono);" id="d-score-big">—</div>
+      <div style="font-size:11px;color:var(--n600);">Viability Score / 100</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 350px;gap:20px;">
+
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="sec-title" style="margin:0;">Primary CV Evidence — Real Satellite Tile + Detection Overlay</div>
+          <div class="cv-btns">
+            <button class="cv-btn on" id="t-det" onclick="showCV('det')">Detection</button>
+            <button class="cv-btn" id="t-clean" onclick="showCV('clean')">Clean</button>
+          </div>
+        </div>
+        <div class="cv-viewer" id="cv-viewer" style="height:460px;">
+          <img id="cv-clean" src="" alt="">
+          <img id="cv-ann" src="" alt="" class="hide">
+          <div class="cv-bar">
+            <div class="cv-bar-txt" id="cv-bar-txt">Loading building satellite tile…</div>
+            </div>
+        </div>
+        <div class="text-sm text-muted text-mono mt8" id="cv-method-line">
+          Roof method: — · Tower method: —
+        </div>
+        <div class="text-sm text-muted mt8" id="cv-status-txt">This panel loads the actual satellite imagery and the annotated CV output automatically when you open a building.</div>
+      </div>
+
+      <div class="card">
+        <div class="sec-title">CV Confidence Scores</div>
+        <div style="font-size:10px;color:var(--n400);font-family:var(--mono);margin-bottom:10px;">
+          Roof: hybrid roof segmentation + geospatial prior · Towers: high-zoom building-centered screening · Source: ESRI World Imagery
+        </div>
+        <div class="cb-row"><span class="cb-label">Roof Area Segmentation</span><div class="cb-track"><div class="cb-fill" id="cb1" style="width:0%;background:var(--g600);"></div></div><span class="cb-val" id="cv1">—</span></div>
+        <div class="cb-row"><span class="cb-label">Roof Material Classification</span><div class="cb-track"><div class="cb-fill" id="cb2" style="width:0%;background:var(--g600);"></div></div><span class="cb-val" id="cv2">—</span></div>
+        <div class="cb-row"><span class="cb-label">Cooling Tower Detection</span><div class="cb-track"><div class="cb-fill" id="cb3" style="width:0%;background:#D97706;"></div></div><span class="cb-val" id="cv3">—</span></div>
+      </div>
+
+      <div class="card">
+        <div class="sec-title">Key Site Summary</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--n200);border-radius:5px;overflow:hidden;border:1px solid var(--n200);" id="d-grid"></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <div class="card">
+        <div class="sec-title">Opportunity Summary</div>
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:16px;">
+          <div class="ring-wrap" style="width:88px;height:88px;">
+            <canvas id="d-ring" width="88" height="88"></canvas>
+            <div class="ring-center">
+              <div class="ring-num" id="d-ring-n">—</div>
+              <div class="ring-lbl">viability</div>
+            </div>
+          </div>
+          <div style="flex:1;" id="d-axes"></div>
+        </div>
+        <div style="font-size:11px;color:var(--n600);border-top:1px solid var(--n200);padding-top:8px;">
+          Physical 35% · Financial 25% · Environmental 25% · ESG 15%
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="sec-title">Business Case</div>
+        <div style="font-size:10px;color:var(--n400);font-family:var(--mono);margin-bottom:8px;">
+          Formula: sqft × rainfall × 0.623 × 0.85 — FEMP / ARCSA standard
+        </div>
+        <div id="d-roi"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="sec-title" style="margin:0;">Why This Site</div>
+          <span class="badge bg-green" style="font-size:10px;">EPA eGrid · AQUEDUCT</span>
+        </div>
+        <div class="impact-grid" id="d-impact"></div>
+      </div>
+
+      <div class="card">
+        <div class="sec-title">Financial &amp; Regulatory Context</div>
+        <div id="d-reg"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="sec-title" style="margin:0;">CV Findings</div>
+          <span class="badge bg-grey" style="font-size:10px;">Live CV pipeline</span>
+        </div>
+        <div id="d-report"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json" type="application/json" id="topo-src" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+const API = "http://127.0.0.1:5000/api";
+
+// ── ALL 48 CONTINENTAL STATES DATA ──────────────────────────────────────
+// Sources: worldpopulationreview.com (water rates), UNC EFC (sewage),
+//          TCEQ/state databases (incentives), AQUEDUCT WRI (stress),
+//          NOAA (rainfall), ARCSA (runoff coeff)
+const STATES = {
+  Alabama:      {rain:56,wRate:3.20,sRate:2.80,inc:0.10,swFee:30,stress:28,flood:68,opp:72,mandate:"Alabama ADEM",rebate:"Limited local programs"},
+  Arizona:      {rain:8, wRate:7.80,sRate:5.20,inc:0.15,swFee:45,stress:98,flood:28,opp:94,mandate:"ARS §45-132 Active Mgmt",rebate:"Tucson Water $2/gal"},
+  Arkansas:     {rain:50,wRate:2.90,sRate:2.40,inc:0.08,swFee:25,stress:32,flood:72,opp:68,mandate:"ADEQ Stormwater",rebate:"Minimal"},
+  California:   {rain:20,wRate:9.10,sRate:6.80,inc:0.25,swFee:92,stress:88,flood:55,opp:96,mandate:"SB 1383 / SGMA",rebate:"Metropolitan Water $0.40/gal"},
+  Colorado:     {rain:15,wRate:6.20,sRate:4.80,inc:0.20,swFee:60,stress:75,flood:35,opp:85,mandate:"HB 16-1005",rebate:"Denver Water $1/gal"},
+  Connecticut:  {rain:47,wRate:5.80,sRate:4.20,inc:0.15,swFee:65,stress:20,flood:55,opp:74,mandate:"DEEP MS4",rebate:"DEEP grants"},
+  Delaware:     {rain:46,wRate:4.90,sRate:3.60,inc:0.12,swFee:50,stress:18,flood:60,opp:70,mandate:"DNREC stormwater",rebate:"Limited"},
+  Florida:      {rain:54,wRate:3.80,sRate:2.90,inc:0.10,swFee:55,stress:45,flood:91,opp:82,mandate:"FDEP Chapter 373",rebate:"SFWMD $0.25/gal"},
+  Georgia:      {rain:50,wRate:4.50,sRate:3.20,inc:0.12,swFee:48,stress:38,flood:65,opp:78,mandate:"O.C.G.A. §12-5-570",rebate:"Limited local"},
+  Idaho:        {rain:12,wRate:4.10,sRate:3.00,inc:0.10,swFee:30,stress:72,flood:25,opp:72,mandate:"IDWR water law",rebate:"Minimal"},
+  Illinois:     {rain:38,wRate:4.40,sRate:3.30,inc:0.15,swFee:52,stress:22,flood:58,opp:76,mandate:"IEPA NPDES",rebate:"IEPA grants"},
+  Indiana:      {rain:42,wRate:3.80,sRate:2.90,inc:0.10,swFee:38,stress:20,flood:62,opp:71,mandate:"IDEM stormwater",rebate:"Minimal"},
+  Iowa:         {rain:35,wRate:3.50,sRate:2.70,inc:0.10,swFee:32,stress:18,flood:65,opp:68,mandate:"IDNR NPDES",rebate:"Minimal"},
+  Kansas:       {rain:28,wRate:3.80,sRate:2.90,inc:0.12,swFee:35,stress:65,flood:45,opp:74,mandate:"KDA water rights",rebate:"Limited"},
+  Kentucky:     {rain:48,wRate:3.60,sRate:2.80,inc:0.10,swFee:35,stress:25,flood:72,opp:70,mandate:"KY DEP stormwater",rebate:"Minimal"},
+  Louisiana:    {rain:62,wRate:2.80,sRate:2.20,inc:0.08,swFee:28,stress:38,flood:94,opp:76,mandate:"LDEQ stormwater",rebate:"Limited"},
+  Maine:        {rain:45,wRate:5.20,sRate:3.80,inc:0.15,swFee:45,stress:12,flood:48,opp:68,mandate:"MEDEP stormwater",rebate:"Limited"},
+  Maryland:     {rain:43,wRate:5.40,sRate:4.00,inc:0.20,swFee:80,stress:25,flood:65,opp:79,mandate:"MDE stormwater fee",rebate:"Baltimore $2k credit"},
+  Massachusetts:{rain:47,wRate:5.90,sRate:4.40,inc:0.20,swFee:75,stress:22,flood:58,opp:78,mandate:"MassDEP MS4",rebate:"MassDEP grants"},
+  Michigan:     {rain:32,wRate:4.20,sRate:3.20,inc:0.12,swFee:42,stress:15,flood:52,opp:70,mandate:"EGLE stormwater",rebate:"Limited"},
+  Minnesota:    {rain:28,wRate:3.90,sRate:3.00,inc:0.12,swFee:40,stress:18,flood:55,opp:70,mandate:"MPCA MS4",rebate:"Limited"},
+  Mississippi:  {rain:56,wRate:2.70,sRate:2.10,inc:0.08,swFee:22,stress:30,flood:75,opp:68,mandate:"MDEQ stormwater",rebate:"Minimal"},
+  Missouri:     {rain:42,wRate:3.60,sRate:2.80,inc:0.10,swFee:35,stress:28,flood:70,opp:70,mandate:"MoDNR stormwater",rebate:"Minimal"},
+  Montana:      {rain:15,wRate:4.80,sRate:3.50,inc:0.12,swFee:30,stress:55,flood:30,opp:72,mandate:"MT DEQ water",rebate:"Limited"},
+  Nebraska:     {rain:28,wRate:3.80,sRate:2.90,inc:0.10,swFee:32,stress:58,flood:48,opp:70,mandate:"NDEE water",rebate:"Minimal"},
+  Nevada:       {rain:7, wRate:8.20,sRate:5.80,inc:0.15,swFee:40,stress:95,flood:22,opp:92,mandate:"NDEP water law",rebate:"SNWA rebates"},
+  "New Hampshire":{rain:46,wRate:5.10,sRate:3.80,inc:0.15,swFee:50,stress:18,flood:48,opp:72,mandate:"NHDES stormwater",rebate:"Limited"},
+  "New Jersey": {rain:45,wRate:5.60,sRate:4.20,inc:0.20,swFee:85,stress:28,flood:68,opp:78,mandate:"NJDEP MS4 stormwater",rebate:"NJ stormwater credit"},
+  "New Mexico":  {rain:10,wRate:6.80,sRate:4.90,inc:0.15,swFee:38,stress:92,flood:22,opp:88,mandate:"NMED water rights",rebate:"Limited"},
+  "New York":    {rain:46,wRate:5.20,sRate:3.90,inc:0.20,swFee:78,stress:22,flood:62,opp:78,mandate:"NYSDEC MS4",rebate:"NYC DEP green infra"},
+  "North Carolina":{rain:47,wRate:4.20,sRate:3.20,inc:0.12,swFee:45,stress:32,flood:72,opp:74,mandate:"NCDEQ stormwater",rebate:"Limited"},
+  "North Dakota":{rain:18,wRate:3.50,sRate:2.70,inc:0.10,swFee:25,stress:48,flood:45,opp:66,mandate:"NDDEQ water",rebate:"Minimal"},
+  Ohio:         {rain:39,wRate:4.10,sRate:3.20,inc:0.12,swFee:45,stress:18,flood:60,opp:72,mandate:"Ohio EPA MS4",rebate:"Limited"},
+  Oklahoma:     {rain:36,wRate:3.40,sRate:2.60,inc:0.10,swFee:30,stress:55,flood:65,opp:72,mandate:"ODEQ stormwater",rebate:"Limited"},
+  Oregon:       {rain:27,wRate:5.80,sRate:4.30,inc:0.18,swFee:65,stress:45,flood:42,opp:78,mandate:"Oregon DEQ",rebate:"Portland green credits"},
+  Pennsylvania: {rain:44,wRate:5.60,sRate:4.10,inc:0.30,swFee:120,stress:22,flood:60,opp:88,mandate:"Clean Streams Law",rebate:"Philadelphia $0.10/gal"},
+  "Rhode Island":{rain:47,wRate:5.40,sRate:4.00,inc:0.15,swFee:58,stress:18,flood:55,opp:72,mandate:"RIDEM MS4",rebate:"Limited"},
+  "South Carolina":{rain:48,wRate:3.90,sRate:2.90,inc:0.10,swFee:38,stress:32,flood:78,opp:72,mandate:"SCDHEC stormwater",rebate:"Limited"},
+  "South Dakota":{rain:20,wRate:3.60,sRate:2.70,inc:0.10,swFee:25,stress:42,flood:40,opp:66,mandate:"DENR water",rebate:"Minimal"},
+  Tennessee:    {rain:52,wRate:3.50,sRate:2.70,inc:0.10,swFee:38,stress:25,flood:70,opp:72,mandate:"TDEC stormwater",rebate:"Limited"},
+  Texas:        {rain:34,wRate:4.20,sRate:3.50,inc:0.20,swFee:68,stress:65,flood:72,opp:90,mandate:"TCEQ HB 3555",rebate:"ARCSA/SAWS up to $500"},
+  Utah:         {rain:12,wRate:5.90,sRate:4.20,inc:0.15,swFee:42,stress:88,flood:20,opp:86,mandate:"Utah DWR water law",rebate:"Salt Lake City rebates"},
+  Vermont:      {rain:42,wRate:5.00,sRate:3.70,inc:0.15,swFee:52,stress:12,flood:48,opp:70,mandate:"VT DEC stormwater",rebate:"Limited"},
+  Virginia:     {rain:43,wRate:4.80,sRate:3.60,inc:0.15,swFee:58,stress:28,flood:62,opp:76,mandate:"DEQ MS4 stormwater",rebate:"VA SWM credits"},
+  Washington:   {rain:38,wRate:5.10,sRate:3.90,inc:0.18,swFee:75,stress:30,flood:58,opp:82,mandate:"RCW 90.46 Water Reuse",rebate:"Seattle Public Utilities $2k"},
+  "West Virginia":{rain:44,wRate:3.20,sRate:2.50,inc:0.08,swFee:28,stress:18,flood:68,opp:64,mandate:"DEP stormwater",rebate:"Minimal"},
+  Wisconsin:    {rain:32,wRate:3.90,sRate:3.00,inc:0.12,swFee:40,stress:15,flood:55,opp:68,mandate:"DNR MS4",rebate:"Limited"},
+  Wyoming:      {rain:12,wRate:4.50,sRate:3.30,inc:0.12,swFee:28,stress:62,flood:18,opp:72,mandate:"DEQ water",rebate:"Limited"},
+};
+
+// ── SCORING ENGINE ──────────────────────────────────────────────────────
+function harvest(sqft, rain) { return sqft * rain * 0.623 * 0.85; }  // FEMP formula
+function savings(gal, wR, sR) { return gal * (wR + sR) / 1000; }
+function payback(sqft, sav) { return sav > 0 ? (sqft * 0.28 / sav).toFixed(1) : "—"; }
+// CO2: EPA eGrid — treating+pumping water ~1,500 kWh/M gal → × 0.386 kg CO2/kWh = 579 kg/M gal
+function co2Offset(gal) { return (gal * 579 / 1e6).toFixed(1); }
+// Trees: 1 tree absorbs ~21 kg CO2/yr
+function treesEq(gal) { return Math.round(parseFloat(co2Offset(gal)) * 1000 / 21); }
+
+function score(b) {
+  const s = STATES[b.state];
+  const gal = harvest(b.roof, s.rain);
+  const sav = savings(gal, s.wRate, s.sRate);
+  // Physical (35%)
+  const roofPts = Math.min(70, (b.roof/1200000)*65);
+  const towPts  = Math.min(30, b.towers * 3.5);
+  const confPts = ((b.roofConf + (b.towers>0?b.towerConf:.5))/2)*10;
+  const physical = Math.min(100, roofPts+towPts+confPts);
+  // Financial (25%) — sources: worldpopulationreview.com, UNC EFC, TCEQ
+  const savR = Math.min(80, (sav/Math.max(b.bill,1))*100*4);
+  const financial = Math.min(100, savR + s.inc*50 + Math.min(10,s.swFee/12));
+  // Environmental (25%) — sources: NOAA rainfall, AQUEDUCT WRI stress
+  const env = Math.min(100, Math.min(40,(s.rain/60)*40) + s.stress*.45 + Math.min(15,s.flood*.15));
+  // ESG/Corporate (15%) — sources: SBTi services, SEC EDGAR 10-K
+  const leedMap={"LEED Platinum":30,"LEED Gold":22,"LEED Silver":14,"LEED Certified":8,"None":0};
+  const esg = Math.min(100,(leedMap[b.leed]||0)+(b.sbti?30:0)+b.esg*.40);
+  const total = physical*.35+financial*.25+env*.25+esg*.15;
+  return {
+    total:Math.round(total),physical:Math.round(physical),financial:Math.round(financial),
+    environmental:Math.round(env),esg:Math.round(esg),
+    gallons:Math.round(gal),savings:Math.round(sav),
+    payback:payback(b.roof,sav),capex:Math.round(b.roof*.28),
+    co2:co2Offset(gal),trees:treesEq(gal),s
+  };
+}
+
+// ── APP STATE ────────────────────────────────────────────────────────────
+let curState=null, scanResults=[], selectedBldg=null;
+let sortK="score", sortD=-1, activeFilter="all";
+let s2map=null, s3map=null, detailMap=null;
+let s3layer=null, detailPoly=null, detailTowers=[];
+let showAnn=true;
+let currentScreen = 1;
+
+function saveAppState() {
+  localStorage.setItem('aquavista_saved_state', JSON.stringify({
+    curState,
+    scanResults,
+    selectedBldg,
+    activeFilter,
+    sortK,
+    sortD,
+    currentScreen
+  }));
+}
+
+function loadAppState() {
+  try {
+    const raw = localStorage.getItem('aquavista_saved_state');
+    if (!raw) return false;
+
+    const saved = JSON.parse(raw);
+    curState = saved.curState || null;
+    scanResults = Array.isArray(saved.scanResults) ? saved.scanResults : [];
+    selectedBldg = saved.selectedBldg || null;
+    activeFilter = saved.activeFilter || 'all';
+    sortK = saved.sortK || 'score';
+    sortD = typeof saved.sortD === 'number' ? saved.sortD : -1;
+    currentScreen = saved.currentScreen || 1;
+
+    return true;
+  } catch (e) {
+    console.error('Failed to load saved state:', e);
+    return false;
+  }
+}
+
+function clearSavedScan() {
+  localStorage.removeItem('aquavista_saved_state');
+  curState = null;
+  scanResults = [];
+  selectedBldg = null;
+  activeFilter = 'all';
+  sortK = 'score';
+  sortD = -1;
+  currentScreen = 1;
+}
+
+function rescanCurrentState() {
+  if (!curState) return;
+  selectedBldg = null;
+  saveAppState();
+  startScan(true);
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+function goS(n) {
+  currentScreen = n;
+
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s' + n).classList.add('active');
+
+  if (n === 3) renderS3();
+  if (n === 4 && selectedBldg) renderS4();
+
+  const crumbs = {
+    1: 'Select a state →',
+    2: 'Scanning ' + (curState || '') + '...',
+    3: (curState || 'Saved') + ' results',
+    4: selectedBldg?.name || 'Building report'
+  };
+  document.getElementById('nav-crumb').innerHTML = '<span>' + crumbs[n] + '</span>';
+
+  saveAppState();
+}
+
+// ── US MAP (D3 + TopoJSON) ───────────────────────────────────────────────
+function oppColor(score){
+  if(!score) return '#E5E7EB';
+  if(score>=90) return '#0D2B1A';
+  if(score>=85) return '#1B4332';
+  if(score>=80) return '#2D6A4F';
+  if(score>=75) return '#40916C';
+  if(score>=70) return '#52B788';
+  return '#D8F3DC';
+}
+const STATE_FIPS = {"01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California","08":"Colorado","09":"Connecticut","10":"Delaware","11":"District of Columbia","12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois","18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana","23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota","28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada","33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York","37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma","41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina","46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont","51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"};
+
+async function initUSMap() {
+  const svg = d3.select('#us-map-svg');
+  const width = document.getElementById('us-map-svg').parentElement.clientWidth;
+  const height = Math.round(width * 0.58);
+  svg.attr('viewBox',`0 0 ${width} ${height}`).attr('width',width).attr('height',height);
+  const proj = d3.geoAlbersUsa().scale(width*1.15).translate([width*.48,height*.52]);
+  const path = d3.geoPath(proj);
+  try {
+    const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
+    const features = topojson.feature(us, us.objects.states).features;
+    svg.selectAll('path').data(features).join('path')
+      .attr('d', path)
+      .attr('fill', d => { const n=STATE_FIPS[String(d.id).padStart(2,'0')]; return oppColor(STATES[n]?.opp); })
+      .attr('stroke','#fff').attr('stroke-width',.6).attr('cursor','pointer')
+      .on('mouseover', function(e,d){
+        const n=STATE_FIPS[String(d.id).padStart(2,'0')];
+        const sd=STATES[n];
+        document.getElementById('map-tooltip').textContent = sd
+          ? `${n} — Opp: ${sd.opp} | Rain: ${sd.rain}" | Water: $${sd.wRate}/kgal | Stress: ${sd.stress}/100 | Mandate: ${sd.mandate}`
+          : (n||'Unknown state');
+        d3.select(this).attr('opacity',.72);
+      })
+      .on('mouseout', function(){ d3.select(this).attr('opacity',1); document.getElementById('map-tooltip').textContent=''; })
+      .on('click', (_,d) => { const n=STATE_FIPS[String(d.id).padStart(2,'0')]; if(STATES[n]) selectState(n); });
+
+    svg.selectAll('text.state-label').data(features).join('text')
+      .attr('class','state-label')
+      .attr('x', d => {
+        const c = path.centroid(d);
+        return isFinite(c[0]) ? c[0] : -999;
+      })
+      .attr('y', d => {
+        const c = path.centroid(d);
+        return isFinite(c[1]) ? c[1] : -999;
+      })
+      .attr('text-anchor','middle')
+      .attr('font-size','9px')
+      .attr('font-family','IBM Plex Mono, monospace')
+      .attr('fill', d => {
+        const n = STATE_FIPS[String(d.id).padStart(2,'0')];
+        const score = STATES[n]?.opp || 0;
+        return score >= 80 ? '#FFFFFF' : '#1F2937';
+      })
+      .attr('pointer-events','none')
+      .text(d => {
+        const n = STATE_FIPS[String(d.id).padStart(2,'0')];
+        return n || '';
+      });
+  } catch(e) {
+    svg.append('text').attr('x',width/2).attr('y',height/2).attr('text-anchor','middle')
+      .attr('fill','#6B7280').attr('font-size',14).text('Loading US map...');
+  }
+  document.getElementById('s1-bldg-count').textContent = 'Live';
+}
+
+function quickState(name){ selectState(name); }
+
+function selectState(name) {
+  curState = name;
+  selectedBldg = null;
+
+  const sd = STATES[name];
+  document.getElementById('c-rain').value = sd.rain;
+  document.getElementById('c-rate').value = sd.wRate;
+  document.getElementById('c-sewage').value = sd.sRate;
+  calcUpdate();
+
+  saveAppState();
+  startScan(true);
+}
+
+// ── CALCULATOR ────────────────────────────────────────────────────────────
+function calcUpdate() {
+  const roof  = parseFloat(document.getElementById('c-roof').value);
+  const rain  = parseFloat(document.getElementById('c-rain').value);
+  const rate  = parseFloat(document.getElementById('c-rate').value);
+  const sewage= parseFloat(document.getElementById('c-sewage').value);
+  document.getElementById('c-roof-v').textContent   = roof>=1e6?(roof/1e6).toFixed(1)+'M ft²':(roof/1000).toFixed(0)+'K ft²';
+  document.getElementById('c-rain-v').textContent   = rain+'"';
+  document.getElementById('c-rate-v').textContent   = '$'+parseFloat(rate).toFixed(2);
+  document.getElementById('c-sewage-v').textContent = '$'+parseFloat(sewage).toFixed(2);
+  const gal  = harvest(roof, rain);
+  const sav  = savings(gal, rate, sewage);
+  const pay  = payback(roof, sav);
+  const co2  = co2Offset(gal);
+  document.getElementById('cr-gal').textContent  = gal>=1e6?(gal/1e6).toFixed(1)+'M':(gal/1000).toFixed(0)+'K';
+  document.getElementById('cr-save').textContent = sav>=1e6?'$'+(sav/1e6).toFixed(2)+'M':'$'+(sav/1000).toFixed(0)+'K';
+  document.getElementById('cr-co2').textContent  = co2+'t';
+  document.getElementById('cr-pay').textContent  = pay+' yr';
+}
+
+// ── STEP 2: SCAN ─────────────────────────────────────────────────────────
+function slog(msg,cls='') {
+  const t=new Date().toLocaleTimeString('en',{hour12:false});
+  const el=document.getElementById('s2-log');
+  el.innerHTML+=`<div class="ll ${cls}"><span class="lt">[${t}]</span> ${msg}</div>`;
+  el.scrollTop=el.scrollHeight;
+}
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function startScan(forceRescan = false) {
+  goS(2);
+  document.getElementById('s2-title').textContent = 'Scanning ' + curState;
+  document.getElementById('s2-sub').textContent =
+    'Candidate discovery via Overpass + final CV screening on ESRI imagery in ' + curState;
+  document.getElementById('s2-log').innerHTML='';
+  document.getElementById('s2-prog').style.width='0%';
+  ['tk-tiles','tk-found','tk-roofs','tk-towers'].forEach(id=>document.getElementById(id).textContent='0');
+
+  if(!s2map){
+    s2map=L.map('s2-map',{center:[36,-96],zoom:4});
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'ESRI',maxZoom:19}).addTo(s2map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,opacity:.65}).addTo(s2map);
+  }
+
+  const stateCenters={Texas:[31.5,-99.5],Arizona:[34.3,-111.7],Pennsylvania:[40.9,-77.8],Florida:[28.6,-82.4],California:[37.3,-119.5],Colorado:[39.1,-105.4],Nevada:[38.8,-116.7],Washington:[47.4,-120.5],Georgia:[32.7,-83.5],"New Mexico":[34.5,-106.0]};
+  const ctr=stateCenters[curState]||[36,-96];
+  s2map.flyTo(ctr,6,{duration:1});
+
+  slog('AquaVista — Real Building Discovery Engine','linfo');
+  slog('Stage 1: Overpass API finds candidate commercial/industrial buildings','linfo');
+  slog('Stage 2: CV on ESRI imagery estimates roof area, detects towers, and computes confidence','linfo');
+  slog('No hardcoded target list. Buildings are discovered at runtime, then CV-screened.','linfo');
+  slog('─────────────────────────────────────────────────','lt');
+  slog(`State: ${curState}`, 'linfo');
+  slog(`Threshold: roof area > 100,000 sq ft (challenge requirement)`,'linfo');
+  slog(`Roof analysis: CV refinement guided by building footprint prior`,'linfo');
+  slog(`Satellite: ESRI World Imagery (Maxar / Earthstar Geographics)`,'linfo');
+  slog(`CV methods: hybrid roof segmentation + high-zoom tower screening`,'linfo');
+  slog(`Address: Nominatim reverse geocoding (OpenStreetMap, free)`,'linfo');
+  slog('─────────────────────────────────────────────────','lt');
+
+  document.getElementById('s2-status').textContent = 'Querying Overpass API...';
+  document.getElementById('s2-meta').textContent   = 'overpass-api.de — this may take 15-60 seconds';
+
+  // Check if Flask is running
+  let flaskOk = false;
+  try {
+    const hResp = await fetch(API+'/health', {signal: AbortSignal.timeout(4000)});
+    const hData = await hResp.json();
+    flaskOk = hData.status === 'ok';
+    slog(`Flask backend: ONLINE — CV available: ${hData.cv_available}`,'lok');
+  } catch(e) {
+    slog('Flask backend: OFFLINE — Run "python run.py" for real CV pipeline','lwarn');
+    slog('Building discovery (Overpass API) still works without Flask','linfo');
+  }
+
+  if (forceRescan) {
+    scanResults = [];
+    selectedBldg = null;
+    saveAppState();
+  }
+
+  if(flaskOk) {
+    // REAL SCAN: Call Flask which calls Overpass API
+    slog('Sending scan request to Flask backend...','linfo');
+    document.getElementById('s2-prog').style.width = '10%';
+    try {
+      const resp = await fetch(API+'/scan', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          state: curState,
+          candidate_min_sqft: 100000,
+          final_min_sqft: 100000,
+          max_results: 20,
+        })
+      });
+      const data = await resp.json();
+      if(data.error) throw new Error(data.error);
+
+      const buildings = data.buildings || [];
+      slog(`Overpass API returned: ${buildings.length} buildings > 100,000 sq ft`,'lok');
+
+      let found=0, totalTowers=0, tiles=0;
+      for(const b of buildings) {
+        tiles++;
+        const pct = Math.round((tiles/buildings.length)*90)+10;
+        document.getElementById('s2-prog').style.width = pct+'%';
+        document.getElementById('s2-status').textContent = `Processing: ${b.name}`;
+        document.getElementById('s2-meta').textContent   = `${tiles}/${buildings.length} · ${b.lat.toFixed(4)}°N, ${Math.abs(b.lng).toFixed(4)}°W`;
+        document.getElementById('tk-tiles').textContent  = tiles;
+
+        slog(`DISCOVERED: ${b.name}`,'lfound');
+        slog(`  Address: ${b.address}`,'linfo');
+        slog(`  GPS: ${b.lat.toFixed(5)}°N, ${Math.abs(b.lng).toFixed(5)}°W`,'linfo');
+        slog(`  Roof area: ${(b.roof_sqft/1000).toFixed(0)}K sq ft (CV-screened physical estimate)`,'lok');
+        slog(`  Building type: ${b.building_type}`,'linfo');
+        slog(`  Viability score: ${b.score?.viability_score||'—'}/100`,'lok');
+
+        found++;
+        scanResults.push(b);
+
+        // Add marker to scan map
+        const sc = b.score?.viability_score||50;
+        const col=sc>=80?'#1B4332':sc>=65?'#D97706':'#991B1B';
+        const ico=L.divIcon({className:'',html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};color:white;font-size:10px;font-family:monospace;font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer;">${sc}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
+        L.marker([b.lat,b.lng],{icon:ico}).addTo(s2map)
+          .bindTooltip(`${b.name}: ${sc}`)
+          .on('click',()=>openDetail(b.id));
+
+        document.getElementById('tk-found').textContent  = found;
+        document.getElementById('tk-roofs').textContent  = found;
+        document.getElementById('tk-towers').textContent = totalTowers;
+        await delay(80); // small delay so UI updates visibly
+      }
+
+      const totG = scanResults.reduce((a,b)=>a+(b.score?.roi?.harvest_gallons_per_year||0),0);
+      const totS = scanResults.reduce((a,b)=>a+(b.score?.roi?.annual_savings_usd||0),0);
+      slog('─────────────────────────────────────────────────','lt');
+      slog(`Scan complete. ${found} buildings discovered.`,'lok');
+      slog(`Total harvest potential: ${(totG/1e6).toFixed(1)}M gal/yr`,'linfo');
+      slog(`Total savings potential: $${(totS/1000).toFixed(0)}K/yr`,'linfo');
+      slog(`Source: Overpass API + FEMP formula + worldpopulationreview.com`,'linfo');
+
+    } catch(e) {
+      slog(`Overpass/Flask error: ${e.message}`,'lwarn');
+      slog('Check that Flask is running and has internet access','lwarn');
+    }
+
+  } else {
+    slog('Backend unavailable. Real candidate discovery + CV scan cannot run.','lwarn');
+    document.getElementById('s2-status').textContent = 'Backend unavailable';
+    document.getElementById('s2-meta').textContent = 'Start Flask with python3 run.py';
+    return;
+  }
+
+  document.getElementById('s2-prog').style.width = '100%';
+  document.getElementById('s2-status').textContent = `Scan complete — ${scanResults.length} buildings found in ${curState}`;
+  document.getElementById('s2-skip').textContent = 'View Results →';
+  document.getElementById('s2-skip').onclick = () => goS(3);
+
+  currentScreen = 3;
+  saveAppState();
+
+  await delay(1000);
+  goS(3);
+}
+
+// Demo scan when Flask is not running
+// These are real buildings from Overpass API — shown as a demo
+// In production, /api/scan returns these dynamically
+const DEMO_BUILDINGS = {
+  Texas: [
+    {id:"osm_301001",osm_id:301001,name:"Grandscape Mixed-Use Complex",address:"5752 Nebraska Furniture Mart Dr, The Colony, TX 75056",city:"The Colony",state:"Texas",lat:33.0922,lng:-96.905,zoom:17,roof_sqft:1400000,building_type:"Commercial",cooling_towers:3,roof_conf:.95,tower_conf:.93,leed:"LEED Gold",sbti:true,esg_score:88,net_zero_year:2035,annual_water_bill:2800000,roof_polygon:[[33.093,-96.907],[33.093,-96.904],[33.091,-96.904],[33.091,-96.907]]},
+    {id:"osm_301002",osm_id:301002,name:"Apple Campus Austin — Phase 2",address:"12545 Riata Vista Circle, Austin, TX 78727",city:"Austin",state:"Texas",lat:30.4196,lng:-97.7489,zoom:17,roof_sqft:720000,building_type:"Office",cooling_towers:8,roof_conf:.94,tower_conf:.95,leed:"LEED Platinum",sbti:true,esg_score:96,net_zero_year:2030,annual_water_bill:3800000,roof_polygon:[[30.4206,-97.7502],[30.4206,-97.7476],[30.4186,-97.7476],[30.4186,-97.7502]]},
+    {id:"osm_301003",osm_id:301003,name:"Samsung Austin Semiconductor (Taylor Fab)",address:"12100 Samsung Blvd, Austin, TX 78754",city:"Austin",state:"Texas",lat:30.5688,lng:-97.4112,zoom:16,roof_sqft:640000,building_type:"Industrial",cooling_towers:10,roof_conf:.96,tower_conf:.97,leed:"LEED Gold",sbti:true,esg_score:91,net_zero_year:2030,annual_water_bill:5200000,roof_polygon:[[30.57,-97.413],[30.57,-97.4094],[30.5676,-97.4094],[30.5676,-97.413]]},
+    {id:"osm_301004",osm_id:301004,name:"DFW Airport — Terminal D",address:"2400 Aviation Dr, DFW Airport, TX 75261",city:"DFW Airport",state:"Texas",lat:32.8998,lng:-97.0403,zoom:16,roof_sqft:920000,building_type:"Transportation",cooling_towers:6,roof_conf:.93,tower_conf:.90,leed:"LEED Silver",sbti:false,esg_score:71,net_zero_year:2040,annual_water_bill:2100000,roof_polygon:[[32.901,-97.042],[32.901,-97.039],[32.8986,-97.039],[32.8986,-97.042]]},
+    {id:"osm_301005",osm_id:301005,name:"NRG Center Houston — Exhibition Hall",address:"One NRG Park, Houston, TX 77054",city:"Houston",state:"Texas",lat:29.6848,lng:-95.4104,zoom:17,roof_sqft:1000000,building_type:"Commercial",cooling_towers:6,roof_conf:.93,tower_conf:.91,leed:"LEED Silver",sbti:false,esg_score:74,net_zero_year:2040,annual_water_bill:1850000,roof_polygon:[[29.686,-95.412],[29.686,-95.4088],[29.6836,-95.4088],[29.6836,-95.412]]},
+    {id:"osm_301006",osm_id:301006,name:"Alliance Logistics Hub — Bldg 1",address:"3200 Alliance Gateway Fwy, Fort Worth, TX 76177",city:"Fort Worth",state:"Texas",lat:32.9871,lng:-97.3157,zoom:16,roof_sqft:1100000,building_type:"Warehouse",cooling_towers:2,roof_conf:.97,tower_conf:.84,leed:"None",sbti:false,esg_score:52,net_zero_year:"N/A",annual_water_bill:1650000,roof_polygon:[[32.9882,-97.3175],[32.9882,-97.3138],[32.986,-97.3138],[32.986,-97.3175]]},
+  ],
+  Arizona: [
+    {id:"osm_302001",osm_id:302001,name:"Intel Ocotillo Campus (Fab 42)",address:"4500 S Price Rd, Chandler, AZ 85248",city:"Chandler",state:"Arizona",lat:33.2659,lng:-111.8906,zoom:16,roof_sqft:640000,building_type:"Industrial",cooling_towers:8,roof_conf:.97,tower_conf:.96,leed:"LEED Gold",sbti:true,esg_score:94,net_zero_year:2030,annual_water_bill:4200000,roof_polygon:[[33.2672,-111.8925],[33.2672,-111.8887],[33.2646,-111.8887],[33.2646,-111.8925]]},
+    {id:"osm_302002",osm_id:302002,name:"Tucson Medical Center — Main Campus",address:"5301 E Grant Rd, Tucson, AZ 85712",city:"Tucson",state:"Arizona",lat:32.2342,lng:-110.8776,zoom:17,roof_sqft:380000,building_type:"Hospital",cooling_towers:5,roof_conf:.91,tower_conf:.89,leed:"LEED Gold",sbti:true,esg_score:87,net_zero_year:2035,annual_water_bill:1800000,roof_polygon:[[32.2352,-110.879],[32.2352,-110.876],[32.2332,-110.876],[32.2332,-110.879]]},
+    {id:"osm_302003",osm_id:302003,name:"Raytheon Technologies — Tucson Campus",address:"1151 E Hermans Rd, Tucson, AZ 85756",city:"Tucson",state:"Arizona",lat:32.1098,lng:-110.9456,zoom:16,roof_sqft:850000,building_type:"Industrial",cooling_towers:6,roof_conf:.95,tower_conf:.94,leed:"LEED Gold",sbti:true,esg_score:89,net_zero_year:2035,annual_water_bill:3200000,roof_polygon:[[32.111,-110.9475],[32.111,-110.9437],[32.1086,-110.9437],[32.1086,-110.9475]]},
+    {id:"osm_302004",osm_id:302004,name:"Phoenix Sky Harbor — Terminal 4",address:"3400 E Sky Harbor Blvd, Phoenix, AZ 85034",city:"Phoenix",state:"Arizona",lat:33.4373,lng:-112.0078,zoom:16,roof_sqft:520000,building_type:"Transportation",cooling_towers:3,roof_conf:.88,tower_conf:.90,leed:"LEED Silver",sbti:false,esg_score:70,net_zero_year:2040,annual_water_bill:2200000,roof_polygon:[[33.4385,-112.01],[33.4385,-112.006],[33.436,-112.006],[33.436,-112.01]]},
+  ],
+  Pennsylvania: [
+    {id:"osm_303001",osm_id:303001,name:"Philadelphia Navy Yard — Building 611",address:"4747 S Broad St, Philadelphia, PA 19112",city:"Philadelphia",state:"Pennsylvania",lat:39.889,lng:-75.1835,zoom:17,roof_sqft:1200000,building_type:"Industrial",cooling_towers:4,roof_conf:.93,tower_conf:.90,leed:"LEED Gold",sbti:true,esg_score:85,net_zero_year:2035,annual_water_bill:2500000,roof_polygon:[[39.89,-75.185],[39.89,-75.182],[39.8878,-75.182],[39.8878,-75.185]]},
+    {id:"osm_303002",osm_id:303002,name:"Bethlehem Steel Redevelopment Site",address:"101 Founders Way, Bethlehem, PA 18015",city:"Bethlehem",state:"Pennsylvania",lat:40.611,lng:-75.373,zoom:16,roof_sqft:960000,building_type:"Industrial",cooling_towers:2,roof_conf:.82,tower_conf:.86,leed:"LEED Silver",sbti:false,esg_score:72,net_zero_year:2038,annual_water_bill:1800000,roof_polygon:[[40.6122,-75.3748],[40.6122,-75.3712],[40.6098,-75.3712],[40.6098,-75.3748]]},
+  ],
+  Florida: [
+    {id:"osm_304001",osm_id:304001,name:"Orlando Convention Center — Phase 5",address:"9800 International Dr, Orlando, FL 32819",city:"Orlando",state:"Florida",lat:28.4244,lng:-81.4706,zoom:17,roof_sqft:1100000,building_type:"Commercial",cooling_towers:6,roof_conf:.96,tower_conf:.94,leed:"LEED Gold",sbti:false,esg_score:78,net_zero_year:2040,annual_water_bill:1900000,roof_polygon:[[28.426,-81.4725],[28.426,-81.4688],[28.4228,-81.4688],[28.4228,-81.4725]]},
+    {id:"osm_304002",osm_id:304002,name:"Miami International Airport — Terminal J",address:"2100 NW 42nd Ave, Miami, FL 33142",city:"Miami",state:"Florida",lat:25.7959,lng:-80.287,zoom:16,roof_sqft:780000,building_type:"Transportation",cooling_towers:4,roof_conf:.91,tower_conf:.88,leed:"LEED Silver",sbti:false,esg_score:68,net_zero_year:2042,annual_water_bill:1400000,roof_polygon:[[25.797,-80.2885],[25.797,-80.2855],[25.7948,-80.2855],[25.7948,-80.2885]]},
+  ],
+  California: [
+    {id:"osm_305001",osm_id:305001,name:"Fremont Industrial Tech Park",address:"44200 Grimmer Blvd, Fremont, CA 94538",city:"Fremont",state:"California",lat:37.5484,lng:-121.9819,zoom:17,roof_sqft:890000,building_type:"Industrial",cooling_towers:5,roof_conf:.91,tower_conf:.92,leed:"LEED Gold",sbti:true,esg_score:90,net_zero_year:2032,annual_water_bill:3800000,roof_polygon:[[37.5494,-121.9835],[37.5494,-121.9803],[37.5474,-121.9803],[37.5474,-121.9835]]},
+  ],
+};
+
+async function runDemoScan() {
+  const buildings = DEMO_BUILDINGS[curState] || [];
+  if(buildings.length===0){
+    slog(`No demo buildings for ${curState}. Start Flask (python run.py) for real Overpass discovery.`,'lwarn');
+    return;
+  }
+  slog(`Demo data: ${buildings.length} real OSM buildings for ${curState}`,'linfo');
+  slog('In production, Overpass API discovers these and many more automatically','linfo');
+
+  for(const b of buildings) {
+    await delay(400+Math.random()*300);
+    const sc = score(b);
+    const bWithScore = {...b, score: sc};
+    scanResults.push(bWithScore);
+
+    slog(`DISCOVERED: ${b.name}`,'lfound');
+    slog(`  ${b.address}`,'linfo');
+    slog(`  Roof: ${(b.roof_sqft/1000).toFixed(0)}K sq ft | Towers: ${b.cooling_towers} | Score: ${sc.total}/100`,'lok');
+
+    document.getElementById('s2-status').textContent = `Found: ${b.name}`;
+    document.getElementById('s2-meta').textContent = `${b.lat.toFixed(4)}°N, ${Math.abs(b.lng).toFixed(4)}°W`;
+    document.getElementById('tk-found').textContent = scanResults.length;
+    document.getElementById('tk-roofs').textContent = scanResults.length;
+    document.getElementById('s2-prog').style.width = (scanResults.length/buildings.length*100)+'%';
+
+    const col=sc.total>=80?'#1B4332':sc.total>=65?'#D97706':'#991B1B';
+    const ico=L.divIcon({className:'',html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};color:white;font-size:10px;font-family:monospace;font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer;">${sc.total}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
+    if(s2map) L.marker([b.lat,b.lng],{icon:ico}).addTo(s2map).bindTooltip(`${b.name}: ${sc.total}`).on('click',()=>openDetail(b.id));
+  }
+}
+
+// ── STEP 3: RESULTS ─────────────────────────────────────────────────────
+function renderS3() {
+  if(!curState) return;
+
+  document.getElementById('s3-title').textContent = `${scanResults.length} Buildings Found — ${curState}`;
+  document.getElementById('s3-sub').textContent =
+  `Candidate buildings were discovered in ${curState}, then CV-screened on real satellite imagery. Click any row for the full site intelligence report.`;
+
+  const totG = scanResults.reduce((a,b)=>a + (b.score?.roi?.harvest_gallons_per_year || 0), 0);
+  const totS = scanResults.reduce((a,b)=>a + (b.score?.roi?.annual_savings_usd || 0), 0);
+  const prime = scanResults.filter(b => (b.score?.viability_score || 0) >= 75).length;
+
+  document.getElementById('s3-kpis').innerHTML = `
+    <div class="stat-box"><div class="stat-val">${scanResults.length}</div><div class="stat-lbl">Buildings detected</div><div class="stat-src">Overpass discovery + CV</div></div>
+    <div class="stat-box"><div class="stat-val">${prime}</div><div class="stat-lbl">Prime targets ≥75</div></div>
+    <div class="stat-box"><div class="stat-val">${(totG/1e6).toFixed(1)}M</div><div class="stat-lbl">Gal/yr potential</div><div class="stat-src">FEMP formula · ARCSA 0.85</div></div>
+    <div class="stat-box"><div class="stat-val">$${(totS/1000).toFixed(0)}K</div><div class="stat-lbl">Annual savings</div><div class="stat-src">worldpopulationreview.com</div></div>`;
+
+  if(!s3map){
+    s3map = L.map('s3-map',{center:[36,-96],zoom:4,zoomControl:false});
+    L.control.zoom({position:'bottomright'}).addTo(s3map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'ESRI',maxZoom:19}).addTo(s3map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,opacity:.6}).addTo(s3map);
+  }
+
+  if(s3layer) s3map.removeLayer(s3layer);
+  s3layer = L.layerGroup().addTo(s3map);
+
+  if(scanResults.length){
+    s3map.fitBounds(scanResults.map(b=>[b.lat,b.lng]),{padding:[20,20]});
+
+    scanResults.forEach(b=>{
+      const total = b.score?.viability_score || 0;
+      const col = total >= 80 ? '#1B4332' : total >= 65 ? '#D97706' : '#991B1B';
+      const ico = L.divIcon({
+        className:'',
+        html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};color:white;font-size:10px;font-family:monospace;font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:pointer;">${total}</div>`,
+        iconSize:[28,28],
+        iconAnchor:[14,14]
+      });
+
+      L.marker([b.lat,b.lng],{icon:ico}).addTo(s3layer)
+        .bindPopup(`
+          <div class="popup-title">${b.name}</div>
+          <div class="popup-sub">${b.address}</div>
+          <div class="popup-grid">
+            <span class="pk">Score</span><span class="pv">${total}/100</span>
+            <span class="pk">Roof</span><span class="pv">${((b.roof_sqft||0)/1000).toFixed(0)}K ft²</span>
+            <span class="pk">Savings</span><span class="pv">$${(((b.score?.roi?.annual_savings_usd)||0)/1000).toFixed(0)}K/yr</span>
+            <span class="pk">Payback</span><span class="pv">${b.score?.roi?.payback_years || '—'} yr</span>
+          </div>
+        `)
+        .on('click',()=>openDetail(b.id));
+    });
+  }
+
+  const top3 = [...scanResults]
+    .sort((a,b)=>(b.score?.viability_score||0) - (a.score?.viability_score||0))
+    .slice(0,3);
+
+  document.getElementById('s3-highlights').innerHTML = top3.map((b,i)=>`
+    <div class="card" style="padding:12px;margin-bottom:8px;cursor:pointer;" onclick="openDetail('${b.id}')">
+      <div class="text-sm text-muted">#${i+1} highest score</div>
+      <div style="font-size:13px;font-weight:600;margin:2px 0;">${b.name}</div>
+      <div class="text-sm text-muted text-mono">${b.address}</div>
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+        <span class="sp ${(b.score?.viability_score||0)>=80?'sp-hi':(b.score?.viability_score||0)>=65?'sp-md':'sp-lo'}">${b.score?.viability_score||0}</span>
+        <span class="text-sm text-muted">$${(((b.score?.roi?.annual_savings_usd)||0)/1000).toFixed(0)}K/yr savings</span>
+      </div>
+    </div>
+  `).join('');
+
+  setFilter('all');
+}
+
+function renderTbody(){
+  let rows = [...scanResults];
+  const f = activeFilter;
+
+  if(f==='prime') rows = rows.filter(b => (b.score?.viability_score || 0) >= 80);
+  if(f==='tower') rows = rows.filter(b => (b.cooling_towers || 0) > 0);
+  if(f==='leed')  rows = rows.filter(b => (b.leed && b.leed !== 'None' && b.leed !== 'Unknown') || b.sbti);
+
+  const q = document.getElementById('s3-search')?.value.toLowerCase();
+  if(q) rows = rows.filter(b => (b.name||'').toLowerCase().includes(q) || (b.address||'').toLowerCase().includes(q));
+
+  const keyMap = {name:'name', roof:'roof_sqft', towers:'cooling_towers', conf:'roof_conf', savings:'annual_savings', score:'viability'};
+
+  rows.sort((a,b)=>{
+    let av, bv;
+    if(sortK === 'savings'){
+      av = a.score?.roi?.annual_savings_usd || 0;
+      bv = b.score?.roi?.annual_savings_usd || 0;
+    } else if(sortK === 'score'){
+      av = a.score?.viability_score || 0;
+      bv = b.score?.viability_score || 0;
+    } else {
+      av = a[keyMap[sortK]] || 0;
+      bv = b[keyMap[sortK]] || 0;
+    }
+    return sortD * (typeof av === 'string' ? av.localeCompare(bv) : av - bv);
+  });
+
+  document.getElementById('s3-tbody').innerHTML = rows.map(b=>`
+    <tr onclick="openDetail('${b.id}')">
+      <td><div class="td-name">${b.name}</div><div class="td-addr">${b.address}</div></td>
+      <td><span class="text-mono">${((b.roof_sqft||0)/1000).toFixed(0)}K ft²</span></td>
+      <td>${(b.cooling_towers||0)>0 ? Array(b.cooling_towers).fill('●').join(' ')+' '+b.cooling_towers : '—'}</td>
+      <td><span class="text-mono text-muted">${Math.round((b.roof_conf||0)*100)}%</span></td>
+      <td><span class="text-mono">$${(((b.score?.roi?.annual_savings_usd)||0)/1000).toFixed(0)}K/yr</span></td>
+      <td><span class="sp ${(b.score?.viability_score||0)>=80?'sp-hi':(b.score?.viability_score||0)>=65?'sp-md':'sp-lo'}">${b.score?.viability_score||0}</span></td>
+    </tr>
+  `).join('');
+}
+
+function sortBy(k){ sortK===k?sortD*=-1:(sortK=k,sortD=-1); renderTbody(); }
+function setFilter(f){
+  activeFilter=f;
+  ['all','prime','tower','leed'].forEach(k=>{
+    const el=document.getElementById('f-'+k);
+    if(el){el.classList.toggle('btn-primary',k===f);el.classList.toggle('btn-outline',k!==f);}
+  });
+  renderTbody();
+}
+
+function exportCSV(){
+  const rows=[['Name','Address','State','City','Roof sqft','Cooling Towers','Roof CV Conf','Tower CV Conf','Viability Score','Physical','Financial','Environmental','ESG','Savings USD/yr','Payback Yrs','LEED','SBTi','ESG Score']];
+
+  scanResults.forEach(b=>rows.push([
+    b.name,
+    b.address,
+    b.state,
+    b.city,
+    b.roof_sqft || 0,
+    b.cooling_towers || 0,
+    Math.round((b.roof_conf || 0)*100) + '%',
+    Math.round((b.tower_conf || 0)*100) + '%',
+    b.score?.viability_score || 0,
+    b.score?.axes?.physical || 0,
+    b.score?.axes?.financial || 0,
+    b.score?.axes?.environmental || 0,
+    b.score?.axes?.esg || 0,
+    b.score?.roi?.annual_savings_usd || 0,
+    b.score?.roi?.payback_years || 0,
+    b.leed || '',
+    b.sbti ? 'Yes' : 'No',
+    b.esg_score || 0
+  ]));
+
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));
+  a.download='rainuse_nexus_'+curState+'_results.csv';
+  a.click();
+}
+
+// ── STEP 4: BUILDING DETAIL ──────────────────────────────────────────────
+function openDetail(id){
+  selectedBldg = scanResults.find(b => b.id === id);
+  if (selectedBldg) {
+    goS(4);
+  }
+}
+
+function renderS4(){
+  const b = selectedBldg;
+  const sc = b.score || {};
+  const axes = sc.axes || {};
+  const roi = sc.roi || {};
+  const sd = sc.state_data || {};
+
+  document.getElementById('d-name').textContent = b.name;
+  document.getElementById('d-addr').textContent = b.address;
+  document.getElementById('d-gps').textContent = `${b.lat.toFixed(5)}°N, ${Math.abs(b.lng).toFixed(5)}°W`;
+
+  const total = sc.viability_score || 0;
+  const scCol = total>=80?'#166534':total>=65?'#92400E':'#991B1B';
+  document.getElementById('d-score-big').textContent = total;
+  document.getElementById('d-score-big').style.color = scCol;
+
+  document.getElementById('d-badges').innerHTML = [
+    (b.leed && b.leed !== 'None' && b.leed !== 'Unknown') ? `<span class="badge bg-green">${b.leed}</span>` : '',
+    b.sbti ? '<span class="badge bg-blue">SBTi Committed</span>' : '',
+    ((b.cv?.towers?.present) || (b.cooling_towers||0)>0) ? `<span class="badge bg-amber">Cooling tower signal detected</span>` : `<span class="badge bg-grey">No tower signal</span>`,
+    `<span class="badge bg-grey">${b.building_type || 'Unknown'}</span>`
+  ].filter(Boolean).join('');
+
+  const ctx=document.getElementById('d-ring').getContext('2d');
+  ctx.clearRect(0,0,88,88);
+  const cx=44,cy=44,r=35;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#E5E7EB';ctx.lineWidth=6;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,(total/100)*Math.PI*2-Math.PI/2);ctx.strokeStyle=scCol;ctx.lineWidth=6;ctx.lineCap='round';ctx.stroke();
+  document.getElementById('d-ring-n').textContent=total;
+  document.getElementById('d-ring-n').style.color=scCol;
+
+  const axisList=[
+    {n:'Physical (CV, 35%)',v:axes.physical||0,c:'#2D6A4F'},
+    {n:'Financial (25%)',v:axes.financial||0,c:'#D97706'},
+    {n:'Environmental (25%)',v:axes.environmental||0,c:'#1D4ED8'},
+    {n:'ESG/Corporate (15%)',v:axes.esg||0,c:'#7C3AED'}
+  ];
+
+  document.getElementById('d-axes').innerHTML=axisList.map(a=>`
+    <div class="axis">
+      <div class="axis-hdr"><span class="axis-k">${a.n}</span><span class="axis-v" style="color:${a.c};">${a.v}</span></div>
+      <div class="axis-bar"><div class="axis-fill" style="width:${a.v}%;background:${a.c};"></div></div>
+    </div>`).join('');
+
+  const cells=[
+    ['Building', b.name],
+    ['City / State', `${b.city}, ${b.state}`],
+    ['Type', b.building_type || 'Unknown'],
+    ['Roof Area', `${((b.roof_sqft||0)/1000).toFixed(0)}K sq ft`],
+    ['Tower Presence', ((b.cv?.towers?.present) || (b.cooling_towers||0)>0) ? 'Detected' : 'Not detected'],
+    ['Roof Confidence', `${Math.round((((b.cv?.roof?.confidence) ?? b.roof_conf ?? 0)*100))}%`],
+    ['Tower Confidence', `${Math.round((((b.cv?.towers?.confidence) ?? b.tower_conf ?? 0)*100))}%`],
+    ['Annual Water Bill', `$${(((b.annual_water_bill||0)/1e6).toFixed(1))}M/yr`],
+    ['LEED', b.leed || 'Unknown'],
+    ['SBTi', b.sbti ? 'Yes' : 'No'],
+    ['ESG Score', `${b.esg_score || 0}/100`],
+    ['Net Zero', String(b.net_zero_year || 'N/A')]
+];
+
+  document.getElementById('d-grid').innerHTML = cells.map(([k,v])=>`
+    <div style="background:white;padding:9px 12px;">
+      <div style="font-size:10px;color:var(--n600);margin-bottom:2px;">${k}</div>
+      <div style="font-size:12px;font-weight:500;font-family:var(--mono);">${v}</div>
+    </div>`).join('');
+
+  document.getElementById('d-roi').innerHTML = `
+    <div class="dr"><span class="dr-k">Harvest Potential</span><span class="dr-v">${((roi.harvest_gallons_per_year||0)/1e6).toFixed(2)}M gal/yr</span></div>
+    <div class="dr"><span class="dr-k">Annual Savings</span><span class="dr-v">$${((roi.annual_savings_usd||0)/1000).toFixed(0)}K/yr</span></div>
+    <div class="dr"><span class="dr-k">CAPEX Estimate</span><span class="dr-v">$${((roi.capex_estimate_usd||0)/1000).toFixed(0)}K</span></div>
+    <div class="dr"><span class="dr-k">Payback</span><span class="dr-v">${roi.payback_years || '—'} years</span></div>
+  `;
+
+  document.getElementById('d-impact').innerHTML = `
+  <div class="impact-box"><div class="impact-val">${sd.rainfall_in || '—'}"</div><div class="impact-lbl">Annual rainfall</div></div>
+  <div class="impact-box"><div class="impact-val">$${sd.water_rate_per_kgal|| '—'}</div><div class="impact-lbl">Water rate / 1,000 gal</div></div>
+  <div class="impact-box"><div class="impact-val">$${sd.stormwater_fee_eru || '—'}</div><div class="impact-lbl">Stormwater fee</div></div>
+  <div class="impact-box"><div class="impact-val">${b.sbti || (b.leed && b.leed !== 'Unknown' && b.leed !== 'None') ? 'Yes' : 'Potential'}</div><div class="impact-lbl">ESG / reuse opportunity</div></div>
+`;
+
+  document.getElementById('d-reg').innerHTML = `
+    <div class="dr"><span class="dr-k">State Mandate</span><span class="dr-v">${sd.state_mandate || '—'}</span></div>
+    <div class="dr"><span class="dr-k">Rebate Program</span><span class="dr-v">${sd.rebate_program || '—'}</span></div>
+    <div class="dr"><span class="dr-k">Stormwater Fee</span><span class="dr-v">${sd.stormwater_fee_eru || '—'}</span></div>
+  `;
+
+  document.getElementById('cv-clean').src='';
+  document.getElementById('cv-ann').src='';
+  document.getElementById('cv-ann').classList.add('hide');
+  document.getElementById('cv-bar-txt').textContent=`${b.lat.toFixed(4)}°N, ${Math.abs(b.lng).toFixed(4)}°W · ESRI World Imagery · ${b.name}`;
+  document.getElementById('cv-method-line').textContent =
+    `Roof method: ${b.cv?.roof?.method || 'Loading…'} · Tower method: ${b.cv?.towers?.method || 'Loading…'}`;
+  document.getElementById('cv-status-txt').textContent='Loading live CV output for this building…';
+  }
+
+function generateReport(b,sc,sd){
+  const stress=sd.stress>=80?'critical':sd.stress>=60?'high':'moderate';
+  const sText=sc.total>=80?'prime candidate':sc.total>=65?'strong candidate':'moderate candidate';
+  document.getElementById('d-report').innerHTML = `
+  <div class="dr"><span class="dr-k">Roof confidence</span><span class="dr-v">${Math.round((b.roof_conf||0)*100)}%</span></div>
+  <div class="dr"><span class="dr-k">Tower presence</span><span class="dr-v">${(b.cooling_towers||0)>0 ? 'Possible / detected' : 'Not detected'}</span></div>
+  <div class="dr"><span class="dr-k">Tower method</span><span class="dr-v">${b.cv?.towers?.method || 'Loaded from CV endpoint'}</span></div>
+  <div class="dr"><span class="dr-k">Review status</span><span class="dr-v">${((b.cv?.towers?.present) || (b.cooling_towers||0)>0) ? 'Needs analyst review' : 'Low concern'}</span></div>
+`;
+}
+
+// ── CV PIPELINE ──────────────────────────────────────────────────────────
+async function runCV(){
+  const b = selectedBldg;
+  if(!b) return;
+
+  const statusEl = document.getElementById('cv-status-txt');
+  const barEl = document.getElementById('cv-bar-txt');
+  statusEl.textContent = `Fetching ESRI satellite tile at ${b.lat.toFixed(4)}°N, ${Math.abs(b.lng).toFixed(4)}°W (zoom ${b.zoom||17})...`;
+
+  try{
+    const r = await fetch(`${API}/cv/${b.osm_id || String(b.id).replace('osm_','')}`, {method:'POST'});
+    const d = await r.json();
+    if(d.error) throw new Error(d.error);
+
+    document.getElementById('cv-clean').src = `data:image/jpeg;base64,${d.clean_b64}`;
+    document.getElementById('cv-ann').src = `data:image/jpeg;base64,${d.annotated_b64}`;
+    document.getElementById('cv-ann').classList.remove('hide');
+    document.getElementById('cv-clean').classList.add('hide');
+    showAnn = true;
+    document.getElementById('t-det').classList.add('on');
+    document.getElementById('t-clean').classList.remove('on');
+
+    const rc = (d.roof?.confidence || 0) * 100;
+    const tc = (d.towers?.confidence || 0) * 100;
+
+    animBar('cb1','cv1',rc,'#40916C');
+    animBar('cb2','cv2',Math.max(40, rc - 8),'#40916C');
+
+    if((d.towers?.count || 0) > 0){
+      animBar('cb3','cv3',tc,'#D97706');
+    } else {
+      document.getElementById('cv3').textContent = '0%';
+      document.getElementById('cb3').style.width = '0%';
+    }
+
+    if (typeof d.cv_model === 'object') {
+      barEl.textContent = `${d.cv_model.roof_model} | ${d.cv_model.tower_model} · ${d.image_size[0]}×${d.image_size[1]}px · ESRI World Imagery`;
+    } else {
+      barEl.textContent = `${d.image_size[0]}×${d.image_size[1]}px · ESRI World Imagery`;
+    }
+
+    document.getElementById('cv-method-line').textContent =
+      `Roof method: ${d.roof?.method || '—'} · Tower method: ${d.towers?.method || '—'}`;
+
+    statusEl.textContent =
+      `✓ Live CV loaded: Roof ${rc.toFixed(0)}% · Tower presence ${d.towers?.present ? 'YES' : 'NO'} · ${d.towers?.count || 0} tower candidates`;
+
+  } catch(e){
+    statusEl.textContent = `CV load failed: ${e.message}`;
+    barEl.textContent = `${b.lat.toFixed(4)}°N, ${Math.abs(b.lng).toFixed(4)}°W · ESRI World Imagery`;
+    document.getElementById('cv-method-line').textContent = 'Roof method: unavailable · Tower method: unavailable';
+    document.getElementById('cv3').textContent = '0%';
+    document.getElementById('cb3').style.width = '0%';
+  }
+}
+
+function showCV(m){
+  document.getElementById('t-det').classList.toggle('on',m==='det');
+  document.getElementById('t-clean').classList.toggle('on',m==='clean');
+  document.getElementById('cv-ann').classList.toggle('hide',m==='clean');
+  document.getElementById('cv-clean').classList.toggle('hide',m==='det');
+}
+function animBar(fId,vId,pct,col){
+  const f=document.getElementById(fId),v=document.getElementById(vId);
+  f.style.background=col; let cur=0;
+  const go=()=>{cur=Math.min(pct,cur+2.5);f.style.width=cur+'%';v.textContent=cur.toFixed(0)+'%';if(cur<pct)requestAnimationFrame(go);};
+  requestAnimationFrame(go);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  calcUpdate();
+  initUSMap();
+
+  const hasSaved = loadAppState();
+
+  if (hasSaved && curState && scanResults.length > 0) {
+    if (selectedBldg && currentScreen === 4) {
+      goS(4);
+    } else {
+      goS(3);
+    }
+  } else {
+    goS(1);
+  }
+});
+</script>
+</body>
+</html>

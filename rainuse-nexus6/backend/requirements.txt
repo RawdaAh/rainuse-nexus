@@ -1,0 +1,11 @@
+flask==3.0.3
+flask-cors==4.0.1
+requests==2.31.0
+Pillow==10.3.0
+opencv-python-headless==4.9.0.80
+numpy==1.26.4
+geopy==2.4.1
+shapely==2.0.4
+pyproj==3.6.1
+ultralytics==8.2.0
+gunicorn==23.0.0
