@@ -903,6 +903,7 @@ async function startScan(forceRescan = false) {
 
         found++;
         scanResults.push(b);
+        totalTowers += (b.cooling_towers || 0);
 
         // Add marker to scan map
         const sc = b.score?.viability_score||50;
