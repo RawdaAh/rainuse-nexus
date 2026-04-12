@@ -874,9 +874,9 @@ async function startScan(forceRescan = false) {
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           state: curState,
-          candidate_min_sqft: 100000,
+          candidate_min_sqft: 60000,
           final_min_sqft: 100000,
-          max_results: 20,
+          max_results: 30,
         })
       });
       const data = await resp.json();
