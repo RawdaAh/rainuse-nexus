@@ -941,9 +941,9 @@ if (flaskOk) {
     }
 
   } else {
-    slog('Backend unavailable. Real candidate discovery + CV scan cannot run.','lwarn');
+    slog('Backend unavailable or still sleeping on Render.','lwarn');
     document.getElementById('s2-status').textContent = 'Backend unavailable';
-    document.getElementById('s2-meta').textContent = 'Start Flask with python3 run.py';
+    document.getElementById('s2-meta').textContent = 'Render backend did not respond in time';
     return;
   }
 
