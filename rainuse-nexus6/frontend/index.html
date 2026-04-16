@@ -950,12 +950,13 @@ async function startScan(forceRescan = false) {
   document.getElementById('s2-status').textContent = `Scan complete — ${scanResults.length} buildings found in ${curState}`;
   document.getElementById('s2-skip').textContent = 'View Results →';
   document.getElementById('s2-skip').onclick = () => goS(3);
-
-  currentScreen = 3;
+  
+  currentScreen = 2;
   saveAppState();
-
-  await delay(1000);
-  goS(3);
+  
+  // stay on the scan screen so the user can read the log
+  slog('Scan finished. Review the CV log here, then click "View Results →" when ready.','lok');
+  return;
 }
 
 // Demo scan when Flask is not running
