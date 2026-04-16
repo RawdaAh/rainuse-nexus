@@ -847,41 +847,41 @@ async function startScan(forceRescan = false) {
   document.getElementById('s2-meta').textContent   = 'overpass-api.de — this may take 15-60 seconds';
 
   // Check if backend is reachable
-let flaskOk = false;
-try {
-  const hResp = await fetch(API + '/health', {
-    signal: AbortSignal.timeout(30000)
-  });
-  const hData = await hResp.json();
-  flaskOk = hResp.ok && hData.status === 'ok';
-  slog(`Backend: ONLINE — CV available: ${hData.cv_available}`,'lok');
-} catch(e) {
-  slog('Backend did not respond in time. Render may still be waking up.','lwarn');
-  slog('Please wait a little and try the scan again.','linfo');
-}
-
-if (forceRescan) {
-  scanResults = [];
-  selectedBldg = null;
-  saveAppState();
-}
-
-if (flaskOk) {
-  slog('Sending scan request to backend...','linfo');
-  document.getElementById('s2-prog').style.width = '10%';
-
+  let flaskOk = false;
   try {
-    const resp = await fetch(API + '/scan', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      signal: AbortSignal.timeout(120000),
-      body: JSON.stringify({
-        state: curState,
-        candidate_min_sqft: 60000,
-        final_min_sqft: 100000,
-        max_results: 10
-      })
+    const hResp = await fetch(API + '/health', {
+      signal: AbortSignal.timeout(30000)
     });
+    const hData = await hResp.json();
+    flaskOk = hResp.ok && hData.status === 'ok';
+    slog(`Backend: ONLINE — CV available: ${hData.cv_available}`,'lok');
+  } catch(e) {
+    slog('Backend did not respond in time. Render may still be waking up.','lwarn');
+    slog('Please wait a little and try the scan again.','linfo');
+  }
+  
+  if (forceRescan) {
+    scanResults = [];
+    selectedBldg = null;
+    saveAppState();
+  }
+  
+  if (flaskOk) {
+    slog('Sending scan request to backend...','linfo');
+    document.getElementById('s2-prog').style.width = '10%';
+  
+    try {
+      const resp = await fetch(API + '/scan', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        signal: AbortSignal.timeout(120000),
+        body: JSON.stringify({
+          state: curState,
+          candidate_min_sqft: 60000,
+          final_min_sqft: 100000,
+          max_results: 10
+        })
+      });
 
     const data = await resp.json();
     if (!resp.ok || data.error) {
