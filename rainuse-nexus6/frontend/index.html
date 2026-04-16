@@ -883,12 +883,11 @@ async function startScan(forceRescan = false) {
         })
       });
 
-    const data = await resp.json();
-    if (!resp.ok || data.error) {
-      throw new Error(data.error || `HTTP ${resp.status}`);
-    }
       const data = await resp.json();
-      if(data.error) throw new Error(data.error);
+      if (!resp.ok || data.error) {
+        throw new Error(data.error || `HTTP ${resp.status}`);
+      }
+
 
       const buildings = data.buildings || [];
       slog(`Overpass API returned: ${buildings.length} buildings > 100,000 sq ft`,'lok');
