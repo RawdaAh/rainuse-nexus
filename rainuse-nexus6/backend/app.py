@@ -72,8 +72,9 @@ def _cache_cv_result(osm_id, building, cv_result, score_result):
         "towers": cv_result.get("towers"),
         "tower_presence_flag": cv_result.get("tower_presence_flag", False),
         "annotated_b64": cv_result.get("annotated_b64"),
-        "clean_b64": cv_result.get("clean_b64"),
-        "saved_files": cv_result.get("saved_files"),
+         "saved_files": {
+             "annotated_path": (cv_result.get("saved_files") or {}).get("annotated_path")
+         },
         "viability_score": score_result,
         "cached_from_scan": True,
     }
