@@ -277,13 +277,14 @@ def _cv_screen_and_score(b):
                 b2["roof_conf"] = float(cv_result["roof"].get("confidence", 0.0))
                 b2["tower_conf"] = float(cv_result["towers"].get("confidence", 0.0))
                 b2["cv"] = {
-                    "source": cv_result.get("source"),
-                    "cv_model": cv_result.get("cv_model"),
-                    "roof": cv_result.get("roof"),
-                    "towers": cv_result.get("towers"),
-                    "annotated_b64": cv_result.get("annotated_b64"),
-                    "clean_b64": cv_result.get("clean_b64"),
-                    "saved_files": cv_result.get("saved_files"),
+                        "source": cv_result.get("source"),
+                         "cv_model": cv_result.get("cv_model"),
+                         "roof": cv_result.get("roof"),
+                         "towers": cv_result.get("towers"),
+                         "annotated_b64": cv_result.get("annotated_b64"),
+                         "saved_files": {
+                             "annotated_path": (cv_result.get("saved_files") or {}).get("annotated_path")
+                         },
                 }
         except Exception as e:
             b2["cv_error"] = str(e)
