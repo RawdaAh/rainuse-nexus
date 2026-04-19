@@ -819,9 +819,8 @@ def run_pipeline(building):
     annotated = annotate(img_roof, roof, towers, building)
     saved = _save_images(img_roof, annotated, building)
 
-    b1, b2 = io.BytesIO(), io.BytesIO()
+    b1 = io.BytesIO()
     annotated.save(b1, "JPEG", quality=88)
-    img_roof.save(b2, "JPEG", quality=88)
 
     return {
         "building_id": building.get("id"),
@@ -845,6 +844,5 @@ def run_pipeline(building):
         "towers": towers,
         "tower_presence_flag": towers.get("present", False),
         "annotated_b64": base64.b64encode(b1.getvalue()).decode(),
-        "clean_b64": base64.b64encode(b2.getvalue()).decode(),
         "saved_files": saved,
     }
